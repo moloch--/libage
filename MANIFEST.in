@@ -1,1 +1,4 @@
 include src/age/libage.so
+include src/age/libage.dylib
+include src/age/libage.h
+

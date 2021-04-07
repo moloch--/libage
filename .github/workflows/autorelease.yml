@@ -1,0 +1,95 @@
+name: Libage
+on:
+  push:
+    tags: v[0-9]+.[0-9]+.[0-9]+
+    branches: master
+
+jobs:
+
+  linux-build:
+    name: Linux Build
+    runs-on: ubuntu-latest
+    if: startsWith( github.ref, 'refs/tags/v')
+    timeout-minutes: 45
+
+    steps:
+
+      - name: Go 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+        id: go
+
+      - name: Check Out Code
+        uses: actions/checkout@v2
+
+      - name: Build Libage
+        run: make linux
+  
+      - name: Linux Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: libage.so
+          path: ./src/age/libage.so
+
+  macos-build:
+    name: MacOS Build
+    if: startsWith( github.ref, 'refs/tags/v')
+    runs-on: macos-latest
+    steps:
+
+    - name: Go 1.16
+      uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16'
+
+    - name: Check Out Code
+      uses: actions/checkout@v2
+
+    - name: Build Libage
+      run: make macos
+
+    - name: MacOS Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: libage.dylib
+        path: ./src/age/libage.dylib
+
+  tagged-release:
+
+    needs: [linux-windows-build, macos-build]
+
+    name: "Tagged Release"
+    if: startsWith( github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+    - run: mkdir -p ./artifacts
+    - uses: actions/download-artifact@v2
+      with:
+        path: ./artifacts
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+        architecture: 'x64'
+
+    - name: Python Setup
+      run: python3 -m pip install --upgrade build
+
+    - name: Check Out Code
+      uses: actions/checkout@v2
+
+    - name: Copy Artifacts
+      run: cp ./artifacts/* ./src/age/
+
+    - name: Package
+      run: python3 -m build
+
+    - name: Github Release
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        files: |
+          ./dist/*

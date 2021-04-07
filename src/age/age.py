@@ -3,15 +3,21 @@
 import os
 import sys
 import ctypes
+import platform
 
-SO_PATH = './libage.so'
+
+if platform.system() == 'Linux':
+    LIB_PATH = './libage.so'
+if platform.system() == 'Darwin':
+    LIB_PATH = './libage.dylib'
+
 
 def encrypt(public_key: str, plaintext: str) -> str:
     ''' Encrypt data using public key '''
-    if not os.path.exists(SO_PATH):
+    if not os.path.exists(LIB_PATH):
         raise NotImplementedError()
 
-    libage = ctypes.cdll.LoadLibrary(SO_PATH)
+    libage = ctypes.cdll.LoadLibrary(LIB_PATH)
 
     # Load Encrypt
     Encrypt = libage.Encrypt
