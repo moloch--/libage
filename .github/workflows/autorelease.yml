@@ -82,7 +82,7 @@ jobs:
 
     - name: Copy Artifacts
       run: |
-        ls -lah ./artifacts
+        ls -lah ./artifacts/libage.so 
         cp ./artifacts/libage.so ./src/age/libage.so
         cp ./artifacts/libage.dylib ./src/age/libage.dylib
 
