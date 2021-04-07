@@ -82,9 +82,8 @@ jobs:
 
     - name: Copy Artifacts
       run: |
-        ls -lah ./artifacts/libage.so 
-        cp ./artifacts/libage.so ./src/age/libage.so
-        cp ./artifacts/libage.dylib ./src/age/libage.dylib
+        cp ./artifacts/libage.so/libage.so ./src/age/libage.so
+        cp ./artifacts/libage.dylib/libage.dylib ./src/age/libage.dylib
 
     - name: Package
       run: python3 -m build
