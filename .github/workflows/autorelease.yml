@@ -81,7 +81,10 @@ jobs:
         path: ./artifacts
 
     - name: Copy Artifacts
-      run: pwd && ls -alh && cp ./artifacts/* ./src/age/
+      run: |
+        ls -lah ./artifacts
+        cp ./artifacts/libage.so ./src/age/libage.so
+        cp ./artifacts/libage.dylib ./src/age/libage.dylib
 
     - name: Package
       run: python3 -m build
