@@ -8,7 +8,9 @@ RUN mkdir -p /opt/libage
 ADD . /opt/libage
 WORKDIR /opt/libage
 RUN make
-RUN chmod +x ./age.py
+RUN chmod +x ./src/age.py
+
+WORKDIR /opt/libage/src
 
 # Test with ed25519
 RUN ssh-keygen -t ed25519 -f ./id_ed25519
