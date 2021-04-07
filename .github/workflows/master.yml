@@ -4,7 +4,6 @@ on:
     tags: v[0-9]+.[0-9]+.[0-9]+
     branches: master
 
-
 jobs:
 
   build:
@@ -24,6 +23,9 @@ jobs:
         with:
           python-version: '3.x'
           architecture: 'x64'
+
+      - name: Python Setup
+        run: python3 -m pip install --upgrade build
 
       - name: Check Out Code
         uses: actions/checkout@v2
