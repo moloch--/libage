@@ -18,7 +18,7 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
+    package_dir={"": "libage"},
+    packages=setuptools.find_packages(where="libage"),
     python_requires=">=3.6",
 )
