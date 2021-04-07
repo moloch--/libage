@@ -57,7 +57,7 @@ jobs:
 
   tagged-release:
 
-    needs: [linux-windows-build, macos-build]
+    needs: [linux-build, macos-build]
 
     name: "Tagged Release"
     if: startsWith( github.ref, 'refs/tags/v')
