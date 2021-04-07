@@ -64,11 +64,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - run: mkdir -p /tmp/artifacts
-    - uses: actions/download-artifact@v2
-      with:
-        path: /tmp/artifacts
-
     - uses: actions/setup-python@v2
       with:
         python-version: '3.x'
@@ -80,8 +75,13 @@ jobs:
     - name: Check Out Code
       uses: actions/checkout@v2
 
+    - run: mkdir -p ./artifacts
+    - uses: actions/download-artifact@v2
+      with:
+        path: ./artifacts
+
     - name: Copy Artifacts
-      run: pwd && ls -alh && cp /tmp/artifacts/* ./src/age/
+      run: pwd && ls -alh && cp ./artifacts/* ./src/age/
 
     - name: Package
       run: python3 -m build
