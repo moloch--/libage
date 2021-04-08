@@ -5,11 +5,11 @@ import sys
 import ctypes
 import platform
 
-
+DIR = os.path.dirname(os.path.abspath(__file__))
 if platform.system() == 'Linux':
-    LIB_PATH = './libage.so'
+    LIB_PATH = os.path.join(DIR, 'libage.so')
 if platform.system() == 'Darwin':
-    LIB_PATH = './libage.dylib'
+    LIB_PATH = os.path.join(DIR, 'libage.dylib')
 
 
 def encrypt(public_key: str, plaintext: str) -> str:
