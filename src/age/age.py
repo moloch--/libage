@@ -12,10 +12,16 @@ if platform.system() == 'Darwin':
     LIB_PATH = os.path.join(DIR, 'libage.dylib')
 
 
-def encrypt(public_key: str, plaintext: str) -> str:
+def encrypt(public_key, plaintext) -> str:
     ''' Encrypt data using public key '''
     if not os.path.exists(LIB_PATH):
         raise NotImplementedError()
+
+    if isinstance(public_key, str):
+        public_key = public_key.encode()
+    if isinstance(plaintext, str):
+        plaintext = plaintext.encode()
+
 
     libage = ctypes.cdll.LoadLibrary(LIB_PATH)
 

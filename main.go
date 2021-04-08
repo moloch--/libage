@@ -23,6 +23,7 @@ var (
 //export FreeResult
 func FreeResult() {
 	C.free(unsafe.Pointer(resultPtr))
+	resultPtr = nil
 }
 
 //export Encrypt
@@ -32,13 +33,15 @@ func Encrypt(cPublicKey *C.char, cPlaintext *C.char) *C.char {
 	if err != nil {
 		resultPtr = C.CString("")
 	}
-	plaintext := C.GoString(cPlaintext)
-	ciphertext := bytes.NewBuffer([]byte{})
-	err = encrypt([]age.Recipient{recipient}, bytes.NewReader([]byte(plaintext)), ciphertext, true)
-	if err != nil {
-		resultPtr = C.CString("")
-	} else {
-		resultPtr = C.CString(ciphertext.String())
+	if recipient != nil {
+		plaintext := C.GoString(cPlaintext)
+		ciphertext := bytes.NewBuffer([]byte{})
+		err = encrypt([]age.Recipient{recipient}, bytes.NewReader([]byte(plaintext)), ciphertext, true)
+		if err != nil {
+			resultPtr = C.CString("")
+		} else {
+			resultPtr = C.CString(ciphertext.String())
+		}
 	}
 	return resultPtr
 }
