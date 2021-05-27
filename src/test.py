@@ -67,7 +67,7 @@ GMJV6Qx3EVEAAAARcm9vdEAzNzM3MWRjOTRlMmMBAg==
 RSA_PUBLIC_KEY = b'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC9eTQVjqMaopSDVF5igf65bwlW4bCySNFiDojpChFMezqzTzNyT5I69eYV0gCXOrwAvNJJUAcFYq1OcEtFolRIAS7GCiL3VR1i7rTC0E6ErJWfp9bXhnvUY4f4dZBcvLHk+BSwd8sNbgzCj324+vv4B5uthbw4D+sQPwWR9CbRrceRoM91HKDgyGLV7rVXINH1Ndiw161okwTLyz2kq9m/84OZ1G5faDo5Rzs+LKqL9dTek1BBUe3TfQQWm4uX6jejNFE2HPcrGyFBU6Ao76E+GhAUlO0fsrL4Fe+StasHg/fpjEjKaPmw7ojRsRKR5TYmTbPpp5HF+jpEwYS9Blni5E8CPt05klo6AR9Qv3H+59/VGHp3XUjOE1etMsBSMo+H0p8ovL7FvwZCq1MBqYxSE7uJsbbkbgfWIJD2xxXokNl5kGmGDqSaWbkW6vFBp8wS9hSlIJ1bgyhM5hYI94mOoYTZou4ZYMLS7oJi4pxVDIoyr8YNtah4xD0fRUSKSIVxXLxYZFAlB8aA9h/pYNZsbqHHtp+MHJ0cpMa9b6sbSAcLOpOCjHDB3OJuMSnBUCRNjm3DQL3rqG7UIIEVhwVDhIyHyuMbUVCsSSDJhF+Mk7OyLXxKxL22sI0A1kq0ah8CZVgKBK8gIenpNepiVgKuDcCTyAZBy6qD9PO7WjvHqQ== root@37371dc94e2c'
 
 
-hello_world = b'hello world\n'
+hello_world = b'hello\x00world'
 
 
 class TestStringMethods(unittest.TestCase):
@@ -75,7 +75,7 @@ class TestStringMethods(unittest.TestCase):
     N = 40
 
     def random_data(self):
-        return os.urandom(random.randint(8, 8))        
+        return os.urandom(random.randint(8, 16))        
 
     def test_encrypt(self):
         for _ in range(self.N):
@@ -93,13 +93,13 @@ class TestStringMethods(unittest.TestCase):
             ciphertext = age.encrypt(RSA_PUBLIC_KEY, plaintext)
             self.assertEqual(plaintext, age.decrypt(RSA_PRIVATE_KEY, ciphertext))
 
-    # def test_ed25519_encrypt_decrypt(self):
-    #     ciphertext = age.encrypt(ED25519_PUBLIC_KEY, hello_world)
-    #     self.assertEqual(hello_world, age.decrypt(ED25519_PRIVATE_KEY, ciphertext))
-    #     for _ in range(self.N):
-    #         plaintext = self.random_data()
-    #         ciphertext = age.encrypt(ED25519_PUBLIC_KEY, plaintext)
-    #         self.assertEqual(plaintext, age.decrypt(ED25519_PRIVATE_KEY, ciphertext))
+    def test_ed25519_encrypt_decrypt(self):
+        ciphertext = age.encrypt(ED25519_PUBLIC_KEY, hello_world)
+        self.assertEqual(hello_world, age.decrypt(ED25519_PRIVATE_KEY, ciphertext))
+        for _ in range(self.N):
+            plaintext = self.random_data()
+            ciphertext = age.encrypt(ED25519_PUBLIC_KEY, plaintext)
+            self.assertEqual(plaintext, age.decrypt(ED25519_PRIVATE_KEY, ciphertext))
 
 
 if __name__ == '__main__':

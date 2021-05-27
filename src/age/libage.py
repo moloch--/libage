@@ -4,7 +4,7 @@ import os
 import ctypes
 import platform
 from typing import Union
-from unittest import result
+from base64 import b64decode
 
 
 DIR = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +35,7 @@ def encrypt(public_key: Union[bytes, str], plaintext: Union[bytes, str]) -> byte
 
     # Load Encrypt
     Encrypt = AGE.Encrypt
-    Encrypt.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32]
+    Encrypt.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_uint32]
     Encrypt.restype = ctypes.c_char_p
 
     # Load ResultLen
@@ -50,9 +50,8 @@ def encrypt(public_key: Union[bytes, str], plaintext: Union[bytes, str]) -> byte
     if resultPtr is None:
         raise FailedToEncrypt
     resultLength = ResultLen()
-    ciphertext = ctypes.string_at(resultPtr, resultLength)
+    ciphertext = bytes(ctypes.string_at(resultPtr, resultLength))
     ResultFree()
-
     return ciphertext
 
 
@@ -68,7 +67,7 @@ def decrypt(private_key: Union[bytes, str], ciphertext: Union[bytes, str]) -> by
 
     # Load Encrypt
     Decrypt = AGE.Decrypt
-    Decrypt.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32]
+    Decrypt.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_uint32]
     Decrypt.restype = ctypes.c_char_p
 
     # Load ResultLen
@@ -83,7 +82,10 @@ def decrypt(private_key: Union[bytes, str], ciphertext: Union[bytes, str]) -> by
     if resultPtr is None:
         raise FailedToEncrypt
     resultLength = ResultLen()
-    plaintext = ctypes.string_at(resultPtr, resultLength)
+    # NOTE: The `ctypes.string_at` null terminates even if you pass in the desired
+    # length and ctypes doesn't seem to have any decent support for just reading n
+    # bytes from the address. The work around is that the Go code base64 encodes the
+    # plaintext before returning it to avoid any nulls and then we decode it
+    plaintext = bytes(ctypes.string_at(resultPtr, resultLength))
     ResultFree()
-
-    return plaintext
+    return b64decode(plaintext)

@@ -7,6 +7,7 @@ import "C"
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,7 +24,7 @@ import (
 var (
 	resultBuf []byte
 	resultPtr unsafe.Pointer
-	resultLen C.int
+	resultLen int
 )
 
 type LazyScryptIdentity struct {
@@ -36,13 +37,13 @@ func ResultFree() {
 		C.free(resultPtr)
 		resultPtr = nil
 		resultBuf = []byte{}
-		resultLen = C.int(0)
+		resultLen = 0
 	}
 }
 
 //export ResultLen
 func ResultLen() C.int {
-	return resultLen
+	return C.int(resultLen)
 }
 
 //export Encrypt
@@ -62,7 +63,7 @@ func Encrypt(cPublicKey *C.char, cPlaintext *C.uchar, length uint32) *C.uchar {
 		} else {
 			resultBuf = ciphertext.Bytes()
 			resultPtr = C.CBytes(resultBuf)
-			resultLen = C.int(len(resultBuf))
+			resultLen = len(resultBuf)
 		}
 	}
 	return (*C.uchar)(resultPtr)
@@ -78,9 +79,13 @@ func Decrypt(cPrivateKey *C.char, cCiphertext *C.uchar, length uint32) *C.uchar 
 	if err != nil {
 		resultPtr = nil
 	} else {
-		resultBuf = plaintext.Bytes()
+		// For whatever reason Python has a really hard time with a pointer to a
+		// buffer that contains nulls even though we're not really using strings
+		// anywhere and we pass the length into `string_at` so instead we base64
+		// encode the plaintext so that Python can manage to support binary data
+		resultBuf = []byte(base64.StdEncoding.EncodeToString(plaintext.Bytes()))
 		resultPtr = C.CBytes(resultBuf)
-		resultLen = C.int(len(resultBuf))
+		resultLen = len(resultBuf)
 	}
 	return (*C.uchar)(resultPtr)
 }
