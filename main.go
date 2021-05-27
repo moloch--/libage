@@ -21,54 +21,68 @@ import (
 )
 
 var (
-	resultPtr *C.char
+	resultBuf []byte
+	resultPtr unsafe.Pointer
+	resultLen C.int
 )
 
 type LazyScryptIdentity struct {
 	Passphrase func() (string, error)
 }
 
-//export FreeResult
-func FreeResult() {
+//export ResultFree
+func ResultFree() {
 	if resultPtr != nil {
-		C.free(unsafe.Pointer(resultPtr))
+		C.free(resultPtr)
 		resultPtr = nil
+		resultBuf = []byte{}
+		resultLen = C.int(0)
 	}
+}
+
+//export ResultLen
+func ResultLen() C.int {
+	return resultLen
 }
 
 //export Encrypt
-func Encrypt(cPublicKey *C.char, cPlaintext *C.char) *C.char {
+func Encrypt(cPublicKey *C.char, cPlaintext *C.uchar, length uint32) *C.uchar {
+	ResultFree()
 	publicKey := C.GoString(cPublicKey)
 	recipient, err := parseRecipient(publicKey)
 	if err != nil {
-		resultPtr = C.CString("")
+		resultPtr = nil
 	}
 	if recipient != nil {
-		plaintext := C.GoString(cPlaintext)
+		plaintext := C.GoBytes(unsafe.Pointer(cPlaintext), C.int(length))
 		ciphertext := bytes.NewBuffer([]byte{})
-		err = encrypt([]age.Recipient{recipient}, bytes.NewReader([]byte(plaintext)), ciphertext, true)
+		err = encrypt([]age.Recipient{recipient}, bytes.NewReader(plaintext), ciphertext, true)
 		if err != nil {
-			resultPtr = C.CString("")
+			resultPtr = nil
 		} else {
-			resultPtr = C.CString(ciphertext.String())
+			resultBuf = ciphertext.Bytes()
+			resultPtr = C.CBytes(resultBuf)
+			resultLen = C.int(len(resultBuf))
 		}
 	}
-	return resultPtr
+	return (*C.uchar)(resultPtr)
 }
 
 //export Decrypt
-func Decrypt(cPrivateKey *C.char, cCiphertext *C.char) *C.char {
+func Decrypt(cPrivateKey *C.char, cCiphertext *C.uchar, length uint32) *C.uchar {
+	ResultFree()
 	privateKey := C.GoString(cPrivateKey)
-	ciphertext := C.GoString(cCiphertext)
-
-	buf := bytes.NewBuffer([]byte{})
-	err := decrypt([]string{privateKey}, bytes.NewReader([]byte(ciphertext)), buf)
+	ciphertext := C.GoBytes(unsafe.Pointer(cCiphertext), C.int(length))
+	plaintext := bytes.NewBuffer([]byte{})
+	err := decrypt([]string{privateKey}, bytes.NewReader(ciphertext), plaintext)
 	if err != nil {
-		resultPtr = C.CString("")
+		resultPtr = nil
 	} else {
-		resultPtr = C.CString(buf.String())
+		resultBuf = plaintext.Bytes()
+		resultPtr = C.CBytes(resultBuf)
+		resultLen = C.int(len(resultBuf))
 	}
-	return resultPtr
+	return (*C.uchar)(resultPtr)
 }
 
 func parseRecipient(arg string) (age.Recipient, error) {
@@ -130,33 +144,25 @@ func decrypt(keys []string, in io.Reader, out io.Writer) error {
 	return nil
 }
 
-func parseIdentitiesFile(name string) ([]age.Identity, error) {
-	var f *os.File
+func parseIdentitiesFile(data string) ([]age.Identity, error) {
 
-	var err error
-	f, err = os.Open(name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %v", err)
-	}
-	defer f.Close()
-
-	b := bufio.NewReader(f)
+	b := bufio.NewReader(strings.NewReader(data))
 	const pemHeader = "-----BEGIN"
 	if peeked, _ := b.Peek(len(pemHeader)); string(peeked) == pemHeader {
 		const privateKeySizeLimit = 1 << 14 // 16 KiB
 		contents, err := ioutil.ReadAll(io.LimitReader(b, privateKeySizeLimit))
 		if err != nil {
-			return nil, fmt.Errorf("failed to read %q: %v", name, err)
+			return nil, fmt.Errorf("failed to read %q: %v", data, err)
 		}
 		if len(contents) == privateKeySizeLimit {
-			return nil, fmt.Errorf("failed to read %q: file too long", name)
+			return nil, fmt.Errorf("failed to read %q: file too long", data)
 		}
-		return parseSSHIdentity(name, contents)
+		return parseSSHIdentity(data, contents)
 	}
 
 	ids, err := age.ParseIdentities(b)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read %q: %v", name, err)
+		return nil, fmt.Errorf("failed to read %q: %v", data, err)
 	}
 	return ids, nil
 }

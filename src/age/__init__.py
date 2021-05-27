@@ -1,1 +1,1 @@
-from .age import encrypt
+from .libage import encrypt, decrypt, FailedToEncrypt
