@@ -72,10 +72,10 @@ hello_world = b'hello\x00world'
 
 class TestStringMethods(unittest.TestCase):
 
-    N = 40
+    N = 50
 
     def random_data(self):
-        return os.urandom(random.randint(8, 16))        
+        return os.urandom(random.randint(8, 32))        
 
     def test_encrypt(self):
         for _ in range(self.N):

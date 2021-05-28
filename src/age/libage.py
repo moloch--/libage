@@ -38,6 +38,11 @@ def encrypt(public_key: Union[bytes, str], plaintext: Union[bytes, str]) -> byte
     Encrypt.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_uint32]
     Encrypt.restype = ctypes.c_char_p
 
+    # Load ResultErr
+    ResultErr = AGE.ResultErr
+    ResultErr.argtypes = []
+    ResultErr.restype = ctypes.c_char_p
+
     # Load ResultLen
     ResultLen = AGE.ResultLen
     ResultLen.argtypes = []
@@ -48,7 +53,11 @@ def encrypt(public_key: Union[bytes, str], plaintext: Union[bytes, str]) -> byte
 
     resultPtr = Encrypt(public_key, plaintext, len(plaintext))
     if resultPtr is None:
-        raise FailedToEncrypt
+        resultErr = ResultErr()
+        reason = ctypes.string_at(resultErr).decode('utf-8')
+        ResultFree()
+        raise FailedToEncrypt(reason)
+
     resultLength = ResultLen()
     ciphertext = bytes(ctypes.string_at(resultPtr, resultLength))
     ResultFree()
@@ -70,6 +79,11 @@ def decrypt(private_key: Union[bytes, str], ciphertext: Union[bytes, str]) -> by
     Decrypt.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_uint32]
     Decrypt.restype = ctypes.c_char_p
 
+    # Load ResultErr
+    ResultErr = AGE.ResultErr
+    ResultErr.argtypes = []
+    ResultErr.restype = ctypes.c_char_p
+
     # Load ResultLen
     ResultLen = AGE.ResultLen
     ResultLen.argtypes = []
@@ -80,7 +94,11 @@ def decrypt(private_key: Union[bytes, str], ciphertext: Union[bytes, str]) -> by
 
     resultPtr = Decrypt(private_key, ciphertext, len(ciphertext))
     if resultPtr is None:
-        raise FailedToEncrypt
+        resultErr = ResultErr()
+        reason = ctypes.string_at(resultErr).decode('utf-8')
+        ResultFree()
+        raise FailedToDecrypt(reason)
+
     resultLength = ResultLen()
     # NOTE: The `ctypes.string_at` null terminates even if you pass in the desired
     # length and ctypes doesn't seem to have any decent support for just reading n

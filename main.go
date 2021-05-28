@@ -22,9 +22,11 @@ import (
 )
 
 var (
-	resultBuf []byte
-	resultPtr unsafe.Pointer
-	resultLen int
+	resultBuf    []byte
+	resultPtr    unsafe.Pointer
+	resultLen    int
+	resultErr    error
+	resultErrPtr *C.char
 )
 
 type LazyScryptIdentity struct {
@@ -39,6 +41,20 @@ func ResultFree() {
 		resultBuf = []byte{}
 		resultLen = 0
 	}
+	if resultErrPtr != nil {
+		resultErr = nil
+		C.free(unsafe.Pointer(resultErrPtr))
+		resultErrPtr = nil
+	}
+}
+
+//export ResultErr
+func ResultErr() *C.char {
+	if resultErr != nil {
+		resultErrPtr = C.CString(resultErr.Error())
+		return resultErrPtr
+	}
+	return nil
 }
 
 //export ResultLen
@@ -52,6 +68,7 @@ func Encrypt(cPublicKey *C.char, cPlaintext *C.uchar, length uint32) *C.uchar {
 	publicKey := C.GoString(cPublicKey)
 	recipient, err := parseRecipient(publicKey)
 	if err != nil {
+		resultErr = err
 		resultPtr = nil
 	}
 	if recipient != nil {
@@ -59,6 +76,7 @@ func Encrypt(cPublicKey *C.char, cPlaintext *C.uchar, length uint32) *C.uchar {
 		ciphertext := bytes.NewBuffer([]byte{})
 		err = encrypt([]age.Recipient{recipient}, bytes.NewReader(plaintext), ciphertext, true)
 		if err != nil {
+			resultErr = err
 			resultPtr = nil
 		} else {
 			resultBuf = ciphertext.Bytes()
@@ -73,10 +91,15 @@ func Encrypt(cPublicKey *C.char, cPlaintext *C.uchar, length uint32) *C.uchar {
 func Decrypt(cPrivateKey *C.char, cCiphertext *C.uchar, length uint32) *C.uchar {
 	ResultFree()
 	privateKey := C.GoString(cPrivateKey)
-	ciphertext := C.GoBytes(unsafe.Pointer(cCiphertext), C.int(length))
+	rawCiphertext := C.GoBytes(unsafe.Pointer(cCiphertext), C.int(length))
+
 	plaintext := bytes.NewBuffer([]byte{})
-	err := decrypt([]string{privateKey}, bytes.NewReader(ciphertext), plaintext)
+
+	ciphertext := strings.NewReader(string(rawCiphertext))
+	armorReader := armor.NewReader(ciphertext)
+	err := decrypt([]string{privateKey}, armorReader, plaintext)
 	if err != nil {
+		resultErr = err
 		resultPtr = nil
 	} else {
 		// For whatever reason Python has a really hard time with a pointer to a
@@ -121,7 +144,7 @@ func encrypt(recipients []age.Recipient, in io.Reader, out io.Writer, withArmor 
 	return nil
 }
 
-func decrypt(keys []string, in io.Reader, out io.Writer) error {
+func decrypt(keys []string, armorReader io.Reader, out io.Writer) error {
 	identities := []age.Identity{}
 
 	for _, name := range keys {
@@ -132,14 +155,7 @@ func decrypt(keys []string, in io.Reader, out io.Writer) error {
 		identities = append(identities, ids...)
 	}
 
-	rr := bufio.NewReader(in)
-	if start, _ := rr.Peek(len(armor.Header)); string(start) == armor.Header {
-		in = armor.NewReader(rr)
-	} else {
-		in = rr
-	}
-
-	r, err := age.Decrypt(in, identities...)
+	r, err := age.Decrypt(armorReader, identities...)
 	if err != nil {
 		return err
 	}
