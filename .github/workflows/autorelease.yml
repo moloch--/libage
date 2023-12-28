@@ -21,6 +21,9 @@ jobs:
       - name: Check Out Code
         uses: actions/checkout@v2
 
+      - name: Install Cross-compilers
+        run: sudo apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+
       - name: Build Libage
         run: make linux && make linux-arm64
 
