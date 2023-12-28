@@ -9,7 +9,7 @@ from base64 import b64decode
 
 DIR = os.path.dirname(os.path.abspath(__file__))
 if platform.system() == "Linux":
-    if platform.processor() == "arm":
+    if platform.machine() in ["aarch64", "arm64"]:
         LIB_PATH = os.path.join(DIR, "libage-arm64.so")
     else:
         LIB_PATH = os.path.join(DIR, "libage.so")
