@@ -5,7 +5,6 @@ on:
     branches: master
 
 jobs:
-
   linux-build:
     name: Linux Build
     runs-on: ubuntu-latest
@@ -13,50 +12,49 @@ jobs:
     timeout-minutes: 45
 
     steps:
-
-      - name: Go 1.16
+      - name: Go 1.21
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.16
+          go-version: ^1.21
         id: go
 
       - name: Check Out Code
         uses: actions/checkout@v2
 
       - name: Build Libage
-        run: make linux
-  
+        run: make linux && make linux-arm64
+
       - name: Linux Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: libage.so
-          path: ./src/age/libage.so
+          path: |
+            ./src/age/libage.so
+            ./src/age/libage-arm64.so
 
   macos-build:
     name: MacOS Build
     if: startsWith( github.ref, 'refs/tags/v')
     runs-on: macos-latest
     steps:
+      - name: Go 1.21
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.21"
 
-    - name: Go 1.16
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.16'
+      - name: Check Out Code
+        uses: actions/checkout@v2
 
-    - name: Check Out Code
-      uses: actions/checkout@v2
+      - name: Build Libage
+        run: make macos
 
-    - name: Build Libage
-      run: make macos
-
-    - name: MacOS Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: libage.dylib
-        path: ./src/age/libage.dylib
+      - name: MacOS Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: libage.dylib
+          path: ./src/age/libage.dylib
 
   tagged-release:
-
     needs: [linux-build, macos-build]
 
     name: "Tagged Release"
@@ -64,34 +62,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-        architecture: 'x64'
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+          architecture: "x64"
 
-    - name: Python Setup
-      run: python3 -m pip install --upgrade build
+      - name: Python Setup
+        run: python3 -m pip install --upgrade build
 
-    - name: Check Out Code
-      uses: actions/checkout@v2
+      - name: Check Out Code
+        uses: actions/checkout@v2
 
-    - run: mkdir -p ./artifacts
-    - uses: actions/download-artifact@v2
-      with:
-        path: ./artifacts
+      - run: mkdir -p ./artifacts
+      - uses: actions/download-artifact@v2
+        with:
+          path: ./artifacts
 
-    - name: Copy Artifacts
-      run: |
-        cp ./artifacts/libage.so/libage.so ./src/age/libage.so
-        cp ./artifacts/libage.dylib/libage.dylib ./src/age/libage.dylib
+      - name: Copy Artifacts
+        run: |
+          cp ./artifacts/libage.so/libage.so ./src/age/libage.so
+          cp ./artifacts/libage.so/libage-arm64.so ./src/age/libage-arm64.so
+          cp ./artifacts/libage.dylib/libage.dylib ./src/age/libage.dylib
 
-    - name: Package
-      run: python3 -m build
+      - name: Package
+        run: python3 -m build
 
-    - name: Github Release
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: false
-        files: |
-          ./dist/*
+      - name: Github Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            ./dist/*

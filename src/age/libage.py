@@ -8,10 +8,13 @@ from base64 import b64decode
 
 
 DIR = os.path.dirname(os.path.abspath(__file__))
-if platform.system() == 'Linux':
-    LIB_PATH = os.path.join(DIR, 'libage.so')
-if platform.system() == 'Darwin':
-    LIB_PATH = os.path.join(DIR, 'libage.dylib')
+if platform.system() == "Linux":
+    if platform.processor() == "arm":
+        LIB_PATH = os.path.join(DIR, "libage-arm64.so")
+    else:
+        LIB_PATH = os.path.join(DIR, "libage.so")
+if platform.system() == "Darwin":
+    LIB_PATH = os.path.join(DIR, "libage.dylib")
 if os.path.exists(LIB_PATH):
     AGE = ctypes.cdll.LoadLibrary(LIB_PATH)
 
@@ -19,12 +22,13 @@ if os.path.exists(LIB_PATH):
 class FailedToEncrypt(Exception):
     pass
 
+
 class FailedToDecrypt(Exception):
     pass
 
 
 def encrypt(public_key: Union[bytes, str], plaintext: Union[bytes, str]) -> bytes:
-    ''' Encrypt data using public key '''
+    """Encrypt data using public key"""
     if not os.path.exists(LIB_PATH):
         raise NotImplementedError()
 
@@ -54,7 +58,7 @@ def encrypt(public_key: Union[bytes, str], plaintext: Union[bytes, str]) -> byte
     resultPtr = Encrypt(public_key, plaintext, len(plaintext))
     if resultPtr is None:
         resultErr = ResultErr()
-        reason = ctypes.string_at(resultErr).decode('utf-8')
+        reason = ctypes.string_at(resultErr).decode("utf-8")
         ResultFree()
         raise FailedToEncrypt(reason)
 
@@ -65,7 +69,7 @@ def encrypt(public_key: Union[bytes, str], plaintext: Union[bytes, str]) -> byte
 
 
 def decrypt(private_key: Union[bytes, str], ciphertext: Union[bytes, str]) -> bytes:
-    ''' Decrypt data using private key '''
+    """Decrypt data using private key"""
     if not os.path.exists(LIB_PATH):
         raise NotImplementedError()
 
@@ -95,7 +99,7 @@ def decrypt(private_key: Union[bytes, str], ciphertext: Union[bytes, str]) -> by
     resultPtr = Decrypt(private_key, ciphertext, len(ciphertext))
     if resultPtr is None:
         resultErr = ResultErr()
-        reason = ctypes.string_at(resultErr).decode('utf-8')
+        reason = ctypes.string_at(resultErr).decode("utf-8")
         ResultFree()
         raise FailedToDecrypt(reason)
 
