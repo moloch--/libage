@@ -1,0 +1,39 @@
+name: Libage
+on:
+  push:
+    branches: master
+
+jobs:
+  linux-build-test:
+    name: Linux Build Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Go 1.21
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.21
+        id: go
+
+      - name: Check Out Code
+        uses: actions/checkout@v2
+
+      - name: Build Libage
+        run: make linux && make linux-arm64
+
+  macos-build:
+    name: MacOS Build
+    if: startsWith( github.ref, 'refs/tags/v')
+    runs-on: macos-latest
+    steps:
+      - name: Go 1.21
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.21"
+
+      - name: Check Out Code
+        uses: actions/checkout@v2
+
+      - name: Build Libage
+        run: make macos
