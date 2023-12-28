@@ -1,3 +1,4 @@
 include src/age/libage.so
+include src/age/libage-arm64.so
 include src/age/libage.dylib
 
