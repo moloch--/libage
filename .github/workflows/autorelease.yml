@@ -86,6 +86,7 @@ jobs:
           cp ./artifacts/libage.so/libage.so ./src/age/libage.so
           cp ./artifacts/libage.so/libage-arm64.so ./src/age/libage-arm64.so
           cp ./artifacts/libage.dylib/libage.dylib ./src/age/libage.dylib
+          ls -lah ./src/age
 
       - name: Package
         run: python3 -m build
