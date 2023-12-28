@@ -24,7 +24,6 @@ jobs:
 
   macos-build:
     name: MacOS Build
-    if: startsWith( github.ref, 'refs/tags/v')
     runs-on: macos-latest
     steps:
       - name: Go 1.21
