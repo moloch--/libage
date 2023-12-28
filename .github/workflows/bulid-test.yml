@@ -16,6 +16,9 @@ jobs:
           go-version: ^1.21
         id: go
 
+      - name: Install Cross-compilers
+        run: apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+
       - name: Check Out Code
         uses: actions/checkout@v2
 
