@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="libage",
-    version="0.0.4",
+    version="0.0.5",
     author="moloch",
     author_email="875022+moloch--@users.noreply.github.com",
     description="Age compiled as a shared library and wrapped in Python.",
